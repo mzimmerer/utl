@@ -47,7 +47,7 @@ namespace utl {
 	utl::string<SIZE> const_string(const char* c_str)
 	{
 		utl::string<SIZE> result(c_str);
-		result.reserve(utl::strlen(c_str) + 1);
+		result.reserve(utl::strlen(c_str));
 		result[strlen(c_str)] = '\0';
 		return result;
 	}
