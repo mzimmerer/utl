@@ -17,24 +17,8 @@
  **/
 #pragma once
 
-namespace utl {
-
-    long int toValue(char c)
-    {
-        if (c < '0' || c > '9')
-            return 0;
-        return c - '0';
-    }
-
-    long int strtol(const char* str, char** endptr, int base)
-    {
-        long int result = 0;
-        while (*str != '\0')
-        {
-            result *= base;
-            result += toValue(*str);
-            ++str;
-        }
-        return result;
-    }
-}
+#ifdef EMBEDDED_BUILD
+#include <stdlib.h>
+#else
+#include <cstdlib>
+#endif

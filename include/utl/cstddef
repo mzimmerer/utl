@@ -18,7 +18,7 @@
 #pragma once
 
 #ifdef EMBEDDED_BUILD
-using size_t = unsigned int;
+#include <stdlib.h>
 #else
 #include <cstddef>
 #endif
