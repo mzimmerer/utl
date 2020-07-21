@@ -1,0 +1,297 @@
+/**
+ *  Micro template library
+ *  Copyright (C) 2020, Matt Zimmerer, mzimmere@gmail.com
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ **/
+#pragma once
+
+#include <utl/cstddef>
+
+// XXX
+size_t my_strlen(const char* src); // XXX
+// XXX
+
+namespace utl {
+
+	template <const size_t SIZE>
+	class string {
+	public:
+
+		using iterator = char*;
+
+		using const_iterator = const char*;
+
+		string() : _size(0)
+		{
+			this->arr[0] = '\0';
+		}
+
+		string(const char* str)
+		{
+			this->_size = 0;
+			for (const char* iter = str; *iter != '\0'; ++iter)
+			{
+				this->arr[this->_size] = *iter;
+				++this->_size;
+			}
+			this->arr[this->_size] = '\0';
+		}
+
+		string(const char* str, size_t len) : _size(len)
+		{
+			for (size_t i = 0; i < this->_size; ++i)
+				this->arr[i] = str[i];
+			this->arr[this->_size] = '\0';
+		}
+
+		template <const size_t OSIZE>
+		string(const string<OSIZE>& other)
+		{
+			this->_size = 0;
+			for (size_t i = 0; i < other.size(); ++i) {
+				this->arr[i] = other[i];
+				++this->_size;
+			}
+			this->arr[this->_size] = '\0';
+		}
+
+		string(iterator begin, iterator end)
+		{
+			this->_size = 0;
+			for (auto iter = begin; iter != end; ++iter)
+			{
+				this->arr[this->_size] = *iter;
+				++this->_size;
+			}
+			this->arr[this->_size] = '\0';
+		}
+
+		~string()
+		{
+			this->clear();
+		}
+
+		void push_back(char input)
+		{
+			this->arr[this->_size++] = input;
+			this->arr[this->_size] = '\0';
+		}
+
+		bool operator==(const char* str) const
+		{
+			if (this->_size != my_strlen(str))
+				return false;
+
+			for (size_t i = 0; i < this->_size; ++i)
+				if (this->arr[i] != str[i])
+					return false;
+
+			return true;
+		}
+
+		bool operator==(const string& other) const
+		{
+			if (this->_size != other._size)
+				return false;
+
+			for (size_t i = 0; i < this->_size; ++i)
+				if (this->arr[i] != other[i])
+					return false;
+
+			return true;
+		}
+
+		template <const size_t OSIZE>
+		string& operator=(const string<OSIZE>& other)
+		{
+			this->clear();
+			this->_size = other.size();
+			for (size_t i = 0; i < this->_size; ++i)
+				this->arr[i] = other[i];
+			this->arr[this->_size] = '\0';
+			return *this;
+		}
+
+		string& operator+=(const char* str)
+		{
+			for (const char* iter = str; *iter != '\0'; ++iter)
+			{
+				this->arr[this->_size] = *iter;
+				++this->_size;
+			}
+			this->arr[this->_size] = '\0';
+			return *this;
+		}
+
+		template <const size_t OSIZE>
+		string& operator+=(const string<OSIZE>& other)
+		{
+			for (size_t i = 0; i < other.size(); ++i)
+				this->arr[this->_size++] = other[i];
+			this->arr[this->_size] = '\0';
+			return *this;
+		}
+
+		char& operator[](size_t offset)
+		{
+			return this->arr[offset];
+		}
+
+		const char& operator[](size_t offset) const
+		{
+			return this->arr[offset];
+		}
+
+		iterator begin()
+		{
+			return &this->arr[0];
+		}
+
+		const const_iterator begin() const
+		{
+			return &this->arr[0];
+		}
+
+		iterator end()
+		{
+			return &this->arr[this->_size];
+		}
+
+		const const_iterator end() const
+		{
+			return &this->arr[this->_size];
+		}
+
+		const char* c_str() const
+		{
+			return this->arr;
+		}
+
+		void reverse()
+		{
+			size_t swaps = this->_size >> 1;
+			for (size_t i = 0; i < swaps; ++i) {
+				char tmp = this->arr[i];
+				this->arr[i] = this->arr[this->_size - 1 - i];
+				this->arr[this->_size - 1 - i] = tmp;
+			}
+		}
+
+		void reserve(size_t n)
+		{
+			this->_size = n;
+		}
+
+		size_t size() const
+		{
+			return this->_size;
+		}
+
+		void clear()
+		{
+			this->_size = 0;
+		}
+
+	private:
+
+		char arr[SIZE + 1];
+		size_t _size;
+	};
+
+	template <const size_t SIZE>
+	static string<SIZE> to_string(int value)
+	{
+		string<SIZE> result;
+
+		if (value == 0)
+			return "0";
+
+		while (value > 0)
+		{
+			int mod = value % 10;
+			switch (mod) {
+			default:
+			case 0:
+				result += "0";
+				break;
+			case 1:
+				result += "1";
+				break;
+			case 2:
+				result += "2";
+				break;
+			case 3:
+				result += "3";
+				break;
+			case 4:
+				result += "4";
+				break;
+			case 5:
+				result += "5";
+				break;
+			case 6:
+				result += "6";
+				break;
+			case 7:
+				result += "7";
+				break;
+			case 8:
+				result += "8";
+				break;
+			case 9:
+				result += "9";
+				break;
+			}
+			value /= 10;
+		}
+
+		result.reverse();
+
+		return result;
+	}
+}
+
+
+#ifdef EMBEDDED_BUILD
+
+#include <avr/pgmspace.h> // TODO an alternative?
+#include <utl/array>
+
+
+
+template <const size_t SIZE>
+static utl::string<SIZE> USTR(const char* PROGMEM progmem_c_string)
+{
+	utl::array<char, SIZE> buffer;
+
+	strcpy_P(&buffer[0], progmem_c_string);
+	size_t len = my_strlen(&buffer[0]);
+	utl::string<SIZE> result(&buffer[0], len);
+
+	return result;
+}
+
+#endif
+
+#ifndef EMBEDDED_BUILD
+const char* PSTR(const char* c_string);
+template <const size_t SIZE>
+static utl::string<SIZE> USTR(const char* c_string)
+{
+	utl::string<SIZE> result(c_string);
+	return result;
+}
+
+#endif

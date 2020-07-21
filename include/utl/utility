@@ -1,0 +1,154 @@
+/**
+ *  Micro template library
+ *  Copyright (C) 2020, Matt Zimmerer, mzimmere@gmail.com
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ **/
+#pragma once
+
+#include <utl/array>
+#include <utl/new>
+
+namespace utl {
+
+	template <typename T, const size_t SIZE>
+	class pool
+	{
+	public:
+
+		pool() {}
+
+		~pool() {}
+
+		pool(const pool& other)
+		{
+			this->entries = other.entries;
+		}
+
+		pool& operator=(const pool& other)
+		{
+			this->entries = other.entries;
+			return *this;
+		}
+
+		T* allocate()
+		{
+			for (auto& e : this->entries)
+			{
+				if (e.in_use == false) {
+					e.in_use = true;
+					return &e.element;
+				}
+			}
+			while (1) {} // XXX FIXME EXCEPTIONS
+		}
+
+		T* push(const T& other)
+		{
+			for (auto& e : this->entries)
+			{
+				if (e.in_use == false) {
+					e.in_use = true;
+					e.element = other;
+					return &e.element;
+				}
+			}
+			while (1) {} // XXX FIXME EXCEPTIONS
+		}
+
+		T* emplace(const T& other)
+		{
+			for (auto& e : this->entries)
+			{
+				if (e.in_use == false) {
+					e.in_use = true;
+					::new (&e.element) T(other);
+					return &e.element;
+				}
+			}
+			while (1) {} // XXX FIXME EXCEPTIONS
+		}
+
+		template <typename ... Args>
+		T* emplace(Args&& ... args)
+		{
+			for (auto& e : this->entries)
+			{
+				if (e.in_use == false) {
+					e.in_use = true;
+					::new (&e.element) T(args...);
+					return &e.element;
+				}
+			}
+			while (1) {} // XXX FIXME EXCEPTIONS
+		}
+
+		void free(T* element)
+		{
+			for (auto& e : this->entries)
+			{
+				if (element == &e.element) {
+					if (e.in_use == false) {
+						while (1) {} // XXX FIXME EXCEPTIONS
+					}
+
+					e.element.~T();
+					e.in_use = false;
+					return;
+				}
+			}
+			while (1) {} // XXX FIXME EXCEPTIONS
+		}
+
+		void clear()
+		{
+			for (auto& e : this->entries)
+			{
+				if (e.in_use == true) {
+					e.element.~T();
+					e.in_use = false;
+				}
+			}
+		}
+
+	private:
+
+		struct entry {
+			bool in_use;
+			T element;
+		};
+
+		utl::array<entry, SIZE> entries{};
+	};
+
+	template <typename LEFT_T, typename RIGHT_T>
+	class pair
+	{
+	public:
+
+		pair()
+		{
+			:: new (&this->first) LEFT_T();
+			:: new (&this->second) RIGHT_T();
+		}
+
+		pair(const LEFT_T& first_in, const RIGHT_T& second_in) : first(first_in), second(second_in)
+		{
+		}
+
+        LEFT_T first;
+
+        RIGHT_T second;
+	};
+}

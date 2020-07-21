@@ -1,0 +1,302 @@
+/**
+ *  Micro template library
+ *  Copyright (C) 2020, Matt Zimmerer, mzimmere@gmail.com
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ **/
+#pragma once
+
+#include <utl/cstddef>
+#include <utl/utility>
+
+namespace utl {
+
+	template <typename T, const size_t SIZE>
+	class list {
+	public:
+
+		class iterator {
+		public:
+			friend list;
+			iterator() {}
+			iterator(T& element_in) : element(&element_in) {}
+			T& operator*() { return *this->element; }
+			const T& operator*() const { return *this->element; }
+			T* operator->() { return this->element; }
+			const T* operator->() const { return this->element; }
+			iterator& operator++()
+			{
+				if (this->next == nullptr) {
+					this->element = nullptr;
+					this->prev = nullptr;
+					this->next = nullptr;
+				}
+				else {
+					this->element = this->next->element;
+					this->prev = this->next->prev;
+					this->next = this->next->next;
+				}
+				return *this;
+			}
+			iterator operator++(int) { return ++(*this); }
+			bool operator!=(const iterator& other) { return this->element != other.element; }
+		private:
+			T* element{ nullptr };
+			iterator* next{ nullptr };
+			iterator* prev{ nullptr };
+		};
+
+		list()
+		{
+		}
+
+		~list()
+		{
+			this->clear();
+		}
+
+		list(const list& other)
+		{
+			for (auto iter = other.begin(); iter != other.end(); ++iter)
+				this->push_back(*iter);
+		}
+
+		list& operator=(const list& other)
+		{
+			this->clear();
+			for (auto iter = other.begin(); iter != other.end(); ++iter)
+				this->push_back(*iter);
+			return *this;
+		}
+
+		T& front()
+		{
+			return *this->list_start->element;
+		}
+
+		const T& front() const
+		{
+			return *this->list_start->element;
+		}
+
+		T& back()
+		{
+			return *this->list_end->element;
+		}
+
+		const T& back() const
+		{
+			return *this->list_end->element;
+		}
+
+		iterator begin()
+		{
+			if (this->size() == 0)
+				return iterator();
+			else
+				return *this->list_start;
+		}
+
+		iterator begin() const
+		{
+			if (this->size() == 0)
+				return iterator();
+			else
+				return *this->list_start;
+		}
+
+		iterator end()
+		{
+			return iterator();
+		}
+
+		iterator end() const
+		{
+			return iterator();
+		}
+
+		size_t size() const
+		{
+			return this->_size;
+		}
+
+		T& push_front(const T& element)
+		{
+			T* new_element = this->elements.push(element);
+			iterator* new_iterator = this->iterators.emplace(*new_element);
+			this->insertBegin(*new_iterator);
+			this->_size++;
+			return *new_element;
+		}
+
+		T& push_back(const T& element)
+		{
+			T* new_element = this->elements.push(element);
+			iterator* new_iterator = this->iterators.emplace(*new_element);
+			this->insertEnd(*new_iterator);
+			this->_size++;
+			return *new_element;
+		}
+
+		template <typename ... Args>
+		T& emplace_back(Args&& ... args)
+		{
+			T* new_element = this->elements.emplace(args...);
+			iterator* new_iterator = this->iterators.emplace(*new_element);
+			this->insertEnd(*new_iterator);
+			this->_size++;
+			return *new_element;
+		}
+
+		T& emplace_back(const T& element)
+		{
+			T* new_element = this->elements.emplace(element);
+			iterator* new_iterator = this->iterators.emplace(*new_element);
+			this->insertEnd(*new_iterator);
+			this->_size++;
+			return *new_element;
+		}
+
+		void pop_front()
+		{
+			iterator* result = this->removeBegin();
+			T* element = result->element;
+			this->iterators.free(result);
+			this->elements.free(element);
+			this->_size--;
+		}
+
+		void pop_back()
+		{
+			iterator* result = this->removeEnd();
+			T* element = result->element;
+			this->iterators.free(result);
+			this->elements.free(element);
+			this->_size--;
+		}
+
+		void sort(bool(*compare)(const T& lhs, const T& rhs))
+		{
+			if (this->list_start == nullptr)
+				return;
+
+
+
+			bool swapped = true;
+			while (swapped == true) {
+				swapped = false;
+				for (iterator* iter = this->list_start; iter->next != nullptr; iter = iter->next)
+				{
+					if (false == compare(*iter->element, *(iter->next)->element))
+					{
+						iter = this->swap(iter, iter->next);
+						swapped = true;
+					}
+				}
+			}
+		}
+
+		void clear()
+		{
+			this->elements.clear();
+			this->iterators.clear();
+			this->_size = 0;
+			this->list_start = nullptr;
+			this->list_end = nullptr;
+		}
+
+	private:
+
+		utl::pool<T, SIZE> elements;
+
+		utl::pool<iterator, SIZE> iterators;
+
+		iterator* list_start{ nullptr };
+
+		iterator* list_end{ nullptr };
+
+		size_t _size{ 0 };
+
+		void insertBegin(iterator& input)
+		{
+			input.next = this->list_start;
+			if (this->list_start == nullptr) {
+				this->list_start = &input;
+				this->list_end = &input;
+			}
+			else {
+				this->list_start->prev = &input;
+				this->list_start = &input;
+			}
+			input.prev = nullptr;
+		}
+
+		void insertEnd(iterator& input)
+		{
+			input.prev = this->list_end;
+			if (this->list_end == nullptr) {
+				this->list_start = &input;
+				this->list_end = &input;
+			}
+			else {
+				this->list_end->next = &input;
+				this->list_end = &input;
+			}
+			input.next = nullptr;
+		}
+
+		iterator* removeBegin()
+		{
+			if (this->list_start->next != nullptr)
+				this->list_start->next->prev = nullptr;
+			iterator* result = this->list_start;
+			this->list_start = this->list_start->next;
+			result->next = nullptr;
+			return result;
+		}
+
+		iterator* removeEnd()
+		{
+			if (this->list_end->prev != nullptr)
+				this->list_end->prev->next = nullptr;
+			iterator* result = this->list_end;
+			this->list_end = this->list_end->prev;
+			result->prev = nullptr;
+			return result;
+		}
+
+		iterator* swap(iterator* a, iterator* b)
+		{
+			iterator* tmp_prev = a->prev;
+
+			if (a->prev == nullptr)
+				this->list_start = b;
+			else
+				a->prev->next = b;
+
+			a->next = b->next;
+			a->prev = b;
+
+			if (b->next == nullptr)
+				this->list_end = a;
+			else
+				b->next->prev = a;
+
+			b->next = a;
+			b->prev = tmp_prev;
+
+			return b;
+		}
+	};
+}

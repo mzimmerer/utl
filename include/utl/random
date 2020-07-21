@@ -1,0 +1,51 @@
+/**
+ *  Micro template library
+ *  Copyright (C) 2020, Matt Zimmerer, mzimmere@gmail.com
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ **/
+#pragma once
+
+#include <utl/cstddef>
+#include <utl/cstdint>
+
+namespace utl {
+
+	class random {
+	public:
+
+        random(uint32_t seed_in) : seed(seed_in)
+        {
+        }
+
+        int range(int lower, int upper)
+        {
+            // Linear congruential generator
+            static constexpr uint32_t a = 1103515245;
+            static constexpr uint32_t c = 12345;
+            this->seed = (a * this->seed + c);
+
+            // Convert int32_t to number in range
+            uint32_t uresult = this->seed;
+            uint32_t d = upper - lower;
+            uresult %= d + 1;
+            int result = static_cast<int>(uresult) + lower;
+            return result;
+        }
+
+    private:
+
+        uint32_t seed;
+	};
+}

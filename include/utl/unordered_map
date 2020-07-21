@@ -1,0 +1,301 @@
+/**
+ *  Micro template library
+ *  Copyright (C) 2020, Matt Zimmerer, mzimmere@gmail.com
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ **/
+#pragma once
+
+#include <utl/array>
+#include <utl/utility>
+#include <utl/vector>
+
+namespace utl {
+
+	template <typename KEY_T, typename VALUE_T, const size_t NUM_BUCKETS, const size_t MAX_BUCKET_DEPTH, class HASH, class KEY_EQUAL>
+	class unordered_map {
+
+	public:
+
+		class iterator {
+		public:
+			iterator() {}
+			iterator(unordered_map& map_in) : map(&map_in), bucket(0), bucket_entry(0)
+			{
+				this->findNextPopulatedBucket();
+			}
+			iterator(unordered_map& map_in, size_t bucket_in, size_t bucket_entry_in) : map(&map_in), bucket(bucket_in), bucket_entry(bucket_entry_in)
+			{
+			}
+
+			utl::pair<KEY_T, VALUE_T> operator*()
+			{
+				return this->map->bucket_table[this->bucket][this->bucket_entry];
+			}
+
+			const utl::pair<KEY_T, VALUE_T> operator*() const
+			{
+				return this->map->bucket_table[this->bucket][this->bucket_entry];
+			}
+
+			utl::pair<KEY_T, VALUE_T>* operator->()
+			{
+				return &this->map->bucket_table[this->bucket][this->bucket_entry];
+			}
+
+			const utl::pair<KEY_T, VALUE_T>* operator->() const
+			{
+				return &this->map->bucket_table[this->bucket][this->bucket_entry];
+			}
+
+			iterator operator++()
+			{
+				++this->bucket_entry;
+				if (this->bucket_entry >= this->map->bucket_table[this->bucket].size())
+				{
+					this->bucket_entry = 0;
+					return this->findNextPopulatedBucket();
+				}
+				return *this;
+			}
+
+			iterator operator++(int)
+			{
+				return ++(*this);
+			}
+
+			bool operator!=(const iterator& other)
+			{
+				return this->bucket != other.bucket && this->bucket_entry != other.bucket_entry;
+			}
+
+		private:
+			unordered_map* map{ nullptr };
+			size_t bucket{ static_cast<size_t>(-1) };
+			size_t bucket_entry{ static_cast<size_t>(-1) };
+			iterator findNextPopulatedBucket()
+			{
+				do {
+					++this->bucket;
+					if (this->bucket >= NUM_BUCKETS) {
+						this->map = nullptr;
+						this->bucket = static_cast<size_t>(-1);
+						this->bucket_entry = static_cast<size_t>(-1);
+						return *this;
+					}
+				} while (this->map->bucket_table[this->bucket].size() == 0);
+				return *this;
+			}
+		};
+
+		class const_iterator {
+		public:
+			const_iterator() {}
+			const_iterator(const unordered_map& map_in) : map(&map_in), bucket(0), bucket_entry(0)
+			{
+				this->findNextPopulatedBucket();
+			}
+			const_iterator(const unordered_map& map_in, size_t bucket_in, size_t bucket_entry_in) : map(&map_in), bucket(bucket_in), bucket_entry(bucket_entry_in)
+			{
+			}
+
+			utl::pair<KEY_T, VALUE_T> operator*()
+			{
+				return this->map->bucket_table[this->bucket][this->bucket_entry];
+			}
+
+			const utl::pair<KEY_T, VALUE_T> operator*() const
+			{
+				return this->map->bucket_table[this->bucket][this->bucket_entry];
+			}
+
+			const utl::pair<KEY_T, VALUE_T>* operator->() const
+			{
+				return &this->map->bucket_table[this->bucket][this->bucket_entry];
+			}
+
+			const_iterator operator++()
+			{
+				++this->bucket_entry;
+				if (this->bucket_entry >= this->map->bucket_table[this->bucket].size())
+				{
+					this->bucket_entry = 0;
+					++this->bucket;
+					return this->findNextPopulatedBucket();
+				}
+				return *this;
+			}
+
+			const_iterator operator++(int)
+			{
+				return ++(*this);
+			}
+
+			bool operator!=(const const_iterator& other)
+			{
+				return this->bucket != other.bucket && this->bucket_entry != other.bucket_entry;
+			}
+
+		private:
+			const unordered_map* map{ nullptr };
+			size_t bucket{ static_cast<size_t>(-1) };
+			size_t bucket_entry{ static_cast<size_t>(-1) };
+			const_iterator findNextPopulatedBucket()
+			{
+				do {
+					if (this->bucket >= NUM_BUCKETS) {
+						this->map = nullptr;
+						this->bucket = static_cast<size_t>(-1);
+						this->bucket_entry = static_cast<size_t>(-1);
+						return *this;
+					}
+
+					if (this->map->bucket_table[this->bucket].size() > 0)
+						return *this;
+
+					this->bucket_entry = 0;
+					++this->bucket;
+
+				} while (1);
+			}
+		};
+
+		unordered_map() { this->clear(); }
+
+		unordered_map(const unordered_map& other)
+		{
+			for (auto iter = other.begin(); iter != other.end(); ++iter)
+				this->insert(iter->first, iter->second);
+		}
+
+		~unordered_map() {}
+
+		unordered_map& operator=(const unordered_map& other)
+		{
+			this->clear();
+			for (auto iter = other.begin(); iter != other.end(); ++iter)
+				this->insert(iter->first, iter->second);
+
+			return *this;
+		}
+
+		utl::pair<iterator, bool> insert(const KEY_T& key, const VALUE_T& value)
+		{
+			HASH hash;
+			size_t bucket = hash(key) % NUM_BUCKETS;
+			for (const auto& pair : this->bucket_table[bucket])
+				if (hash(pair.first) == hash(key))
+					return utl::pair<iterator, bool>(iterator(), false);
+			this->bucket_table[bucket].push_back(utl::pair<KEY_T, VALUE_T>(key, value));
+			++this->_size;
+			return utl::pair<iterator, bool>(iterator(*this, bucket, this->bucket_table[bucket].size() - 1), true);
+		}
+
+		utl::pair<iterator, bool> emplace(const KEY_T& key, const VALUE_T& value)
+		{
+			HASH hash;
+			size_t bucket = hash(key) % NUM_BUCKETS;
+			for (const auto& pair : this->bucket_table[bucket])
+				if (hash(pair.first) == hash(key))
+					return utl::pair<iterator, bool>(iterator(), false);
+			this->bucket_table[bucket].emplace_back(utl::pair<KEY_T, VALUE_T>(key, value));
+			++this->_size;
+			return utl::pair<iterator, bool>(iterator(*this, bucket, this->bucket_table[bucket].size() - 1), true);
+		}
+
+		VALUE_T& at(const KEY_T& key)
+		{
+			HASH hash;
+			size_t bucket = hash(key) % NUM_BUCKETS;
+			for (const auto& pair : this->bucket_table[bucket])
+				if (hash(pair.first) == hash(key))
+					return pair.second;
+		}
+
+		iterator find(const KEY_T& key)
+		{
+			HASH hash;
+			size_t bucket = hash(key) % NUM_BUCKETS;
+			size_t bucket_entry = 0;
+			for (const auto& pair : this->bucket_table[bucket]) {
+				if (hash(pair.first) == hash(key))
+					return iterator(*this, bucket, bucket_entry);
+				++bucket_entry;
+			}
+
+			return iterator();
+		}
+
+		VALUE_T& operator[](const KEY_T& key)
+		{
+			HASH hash;
+			size_t bucket = hash(key) % NUM_BUCKETS;
+			for (auto& pair : this->bucket_table[bucket]) {
+				if (hash(pair.first) == hash(key))
+					return pair.second;
+			}
+
+			this->bucket_table[bucket].reserve(this->bucket_table[bucket].size() + 1);
+			this->bucket_table[bucket][this->bucket_table[bucket].size() - 1].first = key;
+			::new (&this->bucket_table[bucket][this->bucket_table[bucket].size() - 1].second) VALUE_T();
+			++this->_size;
+			return this->bucket_table[bucket][this->bucket_table[bucket].size() - 1].second;
+
+		}
+
+		iterator begin()
+		{
+			if (this->size() == 0)
+				return iterator();
+			else
+				return iterator(*this);
+		}
+
+		const_iterator begin() const
+		{
+			if (this->size() == 0)
+				return const_iterator();
+			else
+				return const_iterator(*this);
+		}
+
+		iterator end()
+		{
+			return iterator();
+		}
+
+		const_iterator end() const
+		{
+			return const_iterator();
+		}
+
+		size_t size() const
+		{
+			return this->_size;
+		}
+
+		void clear()
+		{
+			for (auto& bucket : this->bucket_table)
+				bucket.clear();
+			this->_size = 0;
+		}
+
+	private:
+
+		utl::array<utl::vector<utl::pair<KEY_T, VALUE_T>, MAX_BUCKET_DEPTH>, NUM_BUCKETS> bucket_table;
+
+		size_t _size{ 0 };
+	};
+}

@@ -1,0 +1,153 @@
+/**
+ *  Micro template library
+ *  Copyright (C) 2020, Matt Zimmerer, mzimmere@gmail.com
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ **/
+#pragma once
+
+#include <utl/array>
+
+namespace utl {
+
+	template <typename T, const size_t SIZE>
+	class fifo {
+	public:
+
+		struct iterator {
+			iterator(utl::array<T, SIZE>& fifo_buffer_in, size_t offset_in, bool full_in) : fifo_buffer(&fifo_buffer_in), offset(offset_in), full(full_in) {}
+			iterator& operator=(const iterator& other)
+			{
+				this->offset = other.offset;
+				this->full = other.full;
+				this->fifo_buffer = other.fifo_buffer;
+				return *this;
+			}
+			T& operator*()
+			{
+				return (*this->fifo_buffer)[this->offset];
+			}
+			T& operator*() const
+			{
+				return (*this->fifo_buffer)[this->offset];
+			}
+			iterator& operator+(size_t amount)
+			{
+				this->offset = fifo::increment(this->offset, amount);
+				return *this;
+			}
+			iterator& operator++()
+			{
+				this->offset = fifo::increment(this->offset);
+				return *this;
+			}
+			iterator operator++(int) { return ++(*this); }
+			bool operator!=(const iterator& other)
+			{
+				if (this->offset == other.offset && this->full == true) {
+					this->full = false;
+					return true;
+				}
+				return this->offset != other.offset;
+			}
+			utl::array<T, SIZE>* fifo_buffer;
+			size_t offset{ 0 };
+			bool full{ false };
+		};
+
+		fifo() {}
+
+		void push(const T& element)
+		{
+			this->fifo_buffer[this->write_offset] = element;
+			this->write_offset = fifo::increment(this->write_offset);
+			++this->_size;
+		}
+
+		T& pop(size_t amount = 1)
+		{
+			T& result = this->fifo_buffer[this->read_offset];
+			this->read_offset = fifo::increment(this->read_offset, amount);
+			this->_size -= amount;
+			return result;
+		}
+
+		T& operator[](size_t offset_in)
+		{
+			size_t offset = fifo::increment(this->read_offset, offset_in);
+			return this->fifo_buffer[offset];
+		}
+
+		const T& operator[](size_t offset_in) const
+		{
+			size_t offset = fifo::increment(this->read_offset, offset_in);
+			return this->fifo_buffer[offset];
+		}
+
+		bool empty() const
+		{
+			return this->_size == 0;
+		}
+
+		bool full() const
+		{
+			return this->_size == SIZE;
+		}
+
+		iterator begin()
+		{
+			return iterator(this->fifo_buffer, this->read_offset, this->full());
+		}
+
+		iterator begin() const
+		{
+			return iterator(this->fifo_buffer, this->read_offset, this->full());
+		}
+
+		iterator end()
+		{
+			return iterator(this->fifo_buffer, this->write_offset, true);
+		}
+
+		iterator end() const
+		{
+			return iterator(this->fifo_buffer, this->write_offset, true);
+		}
+
+		size_t size() const
+		{
+			return this->_size;
+		}
+
+		void clear()
+		{
+			this->fifo_buffer.clear();
+			this->read_offset = 0;
+			this->write_offset = 0;
+			this->_size = 0;
+		}
+
+	private:
+		utl::array<T, SIZE> fifo_buffer;
+		size_t read_offset{ 0 };
+		size_t write_offset{ 0 };
+		size_t _size{ 0 };
+		static size_t increment(size_t input, size_t amount = 1) {
+			input += amount;
+			if (input >= SIZE)
+				input -= SIZE;
+			return input;
+		}
+	};
+}

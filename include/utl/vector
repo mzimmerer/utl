@@ -1,0 +1,133 @@
+/**
+ *  Micro template library
+ *  Copyright (C) 2020, Matt Zimmerer, mzimmere@gmail.com
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ **/
+#pragma once
+
+#include <utl/cstddef>
+
+namespace utl {
+
+	template <typename T, const size_t SIZE>
+	class vector {
+
+	public:
+
+		vector()
+		{
+		}
+
+		vector(const T* begin, const T* end)
+		{
+			this->_size = end - begin;
+			for (size_t i = 0; begin != end; ++i, ++begin)
+				(*this)[i] = *begin;
+		}
+
+		~vector()
+		{
+			this->clear();
+		}
+
+		void reserve(size_t size)
+		{
+			this->_size = size;
+		}
+
+		vector& operator=(const vector& other)
+		{
+			this->clear();
+
+			for (const auto& element : other)
+				this->push_back(element);
+
+			return *this;
+		}
+
+		T& operator[](size_t offset)
+		{
+			return reinterpret_cast<T*>(this->memory)[offset];
+		}
+
+		const T& operator[](size_t offset) const
+		{
+			return reinterpret_cast<const T*>(this->memory)[offset];
+		}
+
+		size_t size() const
+		{
+			return this->_size;
+		}
+
+		T* begin()
+		{
+			return &(*this)[0];
+		}
+
+		const T* begin() const
+		{
+			return &(*this)[0];
+		}
+
+		T* end()
+		{
+			return &(*this)[this->_size];
+		}
+
+		const T* end() const
+		{
+			return &(*this)[this->_size];
+		}
+
+		T& push_back(const T& element)
+		{
+			:: new (&(*this)[this->_size]) T();
+			(*this)[this->_size] = element;
+			return (*this)[this->_size++];
+		}
+
+		T& emplace_back(const T& other)
+		{
+			:: new (&(*this)[this->_size]) T(other);
+			return (*this)[this->_size++];
+		}
+
+		template <typename ... Args>
+		T& emplace_back(Args&& ... args)
+		{
+			:: new (&(*this)[this->_size]) T(args...);
+			return (*this)[this->_size++];
+		}
+
+		void clear()
+		{
+			for (size_t i = 0; i < this->_size; i++)
+				(*this)[i].~T();
+
+			this->_size = 0;
+		}
+
+	private:
+
+		unsigned char memory[sizeof(T) * SIZE]{};
+		size_t _size{ 0 };
+	};
+}
+
+// XXX
+#include <utl/string>
+void PRINT_MEM_INFO(const utl::string<16>& hint_string);
+// XXX

@@ -1,0 +1,67 @@
+/**
+ *  Micro template library
+ *  Copyright (C) 2020, Matt Zimmerer, mzimmere@gmail.com
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ **/
+#pragma once
+
+#include <utl/cstddef>
+#include <utl/new>
+
+namespace utl {
+
+	template <typename T, const size_t SIZE>
+	class array {
+
+	public:
+
+		array()
+        {
+            for (size_t i = 0; i < SIZE; ++i)
+                :: new (&this->arr[i]) T();
+        }
+
+        T& operator=(const T& other) {
+            const auto src_iter = other.begin();
+            for (auto dst_iter = this->begin(); dst_iter != this->end(); ++dst_iter) {
+                *dst_iter = *src_iter;
+            }
+        }
+
+		T& operator[](size_t offset) { return this->arr[offset]; }
+
+        const T& operator[](size_t offset) const { return this->arr[offset]; }
+
+		size_t size() const { return SIZE; }
+
+		T* begin() { return &this->arr[0]; }
+
+        const T* begin() const { return &this->arr[0]; }
+
+		T* end() { return &this->arr[SIZE]; }
+
+        const T* end() const { return &this->arr[SIZE]; }
+
+        void clear()
+        {
+            for (size_t i = 0; i < SIZE; ++i)
+                :: new (&this->arr[i]) T();
+        }
+
+    private:
+
+		T arr[SIZE];
+	};
+}
