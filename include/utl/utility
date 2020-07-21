@@ -51,7 +51,7 @@ namespace utl {
 					return &e.element;
 				}
 			}
-			while (1) {} // XXX FIXME EXCEPTIONS
+			return nullptr;
 		}
 
 		T* push(const T& other)
@@ -64,7 +64,7 @@ namespace utl {
 					return &e.element;
 				}
 			}
-			while (1) {} // XXX FIXME EXCEPTIONS
+			return nullptr;
 		}
 
 		T* emplace(const T& other)
@@ -77,7 +77,7 @@ namespace utl {
 					return &e.element;
 				}
 			}
-			while (1) {} // XXX FIXME EXCEPTIONS
+			return nullptr;
 		}
 
 		template <typename ... Args>
@@ -91,7 +91,7 @@ namespace utl {
 					return &e.element;
 				}
 			}
-			while (1) {} // XXX FIXME EXCEPTIONS
+			return nullptr;
 		}
 
 		void free(T* element)
@@ -99,16 +99,11 @@ namespace utl {
 			for (auto& e : this->entries)
 			{
 				if (element == &e.element) {
-					if (e.in_use == false) {
-						while (1) {} // XXX FIXME EXCEPTIONS
-					}
-
 					e.element.~T();
 					e.in_use = false;
 					return;
 				}
 			}
-			while (1) {} // XXX FIXME EXCEPTIONS
 		}
 
 		void clear()

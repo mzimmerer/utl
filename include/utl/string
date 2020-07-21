@@ -19,11 +19,39 @@
 
 #include <utl/cstddef>
 
-// XXX
-size_t my_strlen(const char* src); // XXX
-// XXX
+#ifdef EMBEDDED_BUILD
+#include <avr/pgmspace.h>
+#else
+#include <cstring>
+const char* PSTR(const char* c_string);
+#endif
 
 namespace utl {
+
+	template <const size_t SIZE>
+	class string;
+
+	size_t strlen(const char* src);
+
+	template <const size_t SIZE>
+#ifdef EMBEDDED_BUILD
+	utl::string<SIZE> const_string(const char* PROGMEM c_str)
+	{
+		utl::string<SIZE> result;
+		result.reserve(utl::strlen(c_str) + 1);
+		strcpy_P(&result[0], c_str);
+		result[strlen(c_str)] = '\0';
+		return result;
+	}
+#else
+	utl::string<SIZE> const_string(const char* c_str)
+	{
+		utl::string<SIZE> result(c_str);
+		result.reserve(utl::strlen(c_str) + 1);
+		result[strlen(c_str)] = '\0';
+		return result;
+	}
+#endif
 
 	template <const size_t SIZE>
 	class string {
@@ -91,7 +119,7 @@ namespace utl {
 
 		bool operator==(const char* str) const
 		{
-			if (this->_size != my_strlen(str))
+			if (this->_size != utl::strlen(str))
 				return false;
 
 			for (size_t i = 0; i < this->_size; ++i)
@@ -216,7 +244,7 @@ namespace utl {
 		string<SIZE> result;
 
 		if (value == 0)
-			return "0";
+			return utl::const_string<1>(PSTR("0"));
 
 		while (value > 0)
 		{
@@ -224,34 +252,34 @@ namespace utl {
 			switch (mod) {
 			default:
 			case 0:
-				result += "0";
+				result += utl::const_string<1>(PSTR("0"));
 				break;
 			case 1:
-				result += "1";
+				result += utl::const_string<1>(PSTR("1"));
 				break;
 			case 2:
-				result += "2";
+				result += utl::const_string<1>(PSTR("2"));
 				break;
 			case 3:
-				result += "3";
+				result += utl::const_string<1>(PSTR("3"));
 				break;
 			case 4:
-				result += "4";
+				result += utl::const_string<1>(PSTR("4"));
 				break;
 			case 5:
-				result += "5";
+				result += utl::const_string<1>(PSTR("5"));
 				break;
 			case 6:
-				result += "6";
+				result += utl::const_string<1>(PSTR("6"));
 				break;
 			case 7:
-				result += "7";
+				result += utl::const_string<1>(PSTR("7"));
 				break;
 			case 8:
-				result += "8";
+				result += utl::const_string<1>(PSTR("8"));
 				break;
 			case 9:
-				result += "9";
+				result += utl::const_string<1>(PSTR("9"));
 				break;
 			}
 			value /= 10;
@@ -262,36 +290,3 @@ namespace utl {
 		return result;
 	}
 }
-
-
-#ifdef EMBEDDED_BUILD
-
-#include <avr/pgmspace.h> // TODO an alternative?
-#include <utl/array>
-
-
-
-template <const size_t SIZE>
-static utl::string<SIZE> USTR(const char* PROGMEM progmem_c_string)
-{
-	utl::array<char, SIZE> buffer;
-
-	strcpy_P(&buffer[0], progmem_c_string);
-	size_t len = my_strlen(&buffer[0]);
-	utl::string<SIZE> result(&buffer[0], len);
-
-	return result;
-}
-
-#endif
-
-#ifndef EMBEDDED_BUILD
-const char* PSTR(const char* c_string);
-template <const size_t SIZE>
-static utl::string<SIZE> USTR(const char* c_string)
-{
-	utl::string<SIZE> result(c_string);
-	return result;
-}
-
-#endif

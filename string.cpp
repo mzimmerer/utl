@@ -16,11 +16,24 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  **/
 
-#include <utl/new>
+#include <utl/array>
+#include <utl/string>
 
-#ifdef EMBEDDED_BUILD
-void* operator new(size_t size, void* dst_mem)
+size_t utl::strlen(const char* src)
 {
-    return dst_mem;
+	size_t result = 0;
+
+	while (*src != '\0') {
+		result++;
+		++src;
+	}
+
+	return result;
+}
+
+#ifndef EMBEDDED_BUILD
+const char* PSTR(const char* c_string)
+{
+	return c_string;
 }
 #endif

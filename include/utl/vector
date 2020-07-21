@@ -126,8 +126,3 @@ namespace utl {
 		size_t _size{ 0 };
 	};
 }
-
-// XXX
-#include <utl/string>
-void PRINT_MEM_INFO(const utl::string<16>& hint_string);
-// XXX
