@@ -17,6 +17,7 @@
  **/
 #pragma once
 
+#include <utl/array>
 #include <utl/cstddef>
 
 #ifdef EMBEDDED_BUILD
@@ -37,10 +38,10 @@ namespace utl {
 #ifdef EMBEDDED_BUILD
 	utl::string<SIZE> const_string(const char* PROGMEM c_str)
 	{
-		utl::string<SIZE> result;
-		result.reserve(utl::strlen(c_str) + 1);
-		strcpy_P(&result[0], c_str);
-		result[strlen(c_str)] = '\0';
+		utl::array<char, SIZE + 1> buffer;
+		strcpy_P(&buffer[0], c_str);
+		size_t len = utl::strlen(&buffer[0]);
+		utl::string<SIZE> result(&buffer[0], len);
 		return result;
 	}
 #else
