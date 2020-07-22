@@ -48,7 +48,7 @@ namespace utl {
 	utl::string<SIZE> const_string(const char* c_str)
 	{
 		utl::string<SIZE> result(c_str);
-		result.reserve(utl::strlen(c_str));
+		result.resize(utl::strlen(c_str));
 		result[strlen(c_str)] = '\0';
 		return result;
 	}
@@ -218,9 +218,10 @@ namespace utl {
 			}
 		}
 
-		void reserve(size_t n)
+		void resize(size_t n)
 		{
 			this->_size = n;
+			this->arr[this->_size] = '\0';
 		}
 
 		size_t size() const

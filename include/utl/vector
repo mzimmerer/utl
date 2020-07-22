@@ -42,7 +42,7 @@ namespace utl {
 			this->clear();
 		}
 
-		void reserve(size_t size)
+		void resize(size_t size)
 		{
 			this->_size = size;
 		}
