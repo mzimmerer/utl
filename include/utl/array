@@ -62,6 +62,6 @@ namespace utl {
 
     private:
 
-		T arr[SIZE];
+        T arr[SIZE] = {};
 	};
 }

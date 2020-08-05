@@ -120,7 +120,7 @@ namespace utl {
 	private:
 
 		struct entry {
-			bool in_use;
+			bool in_use{ false };
 			T element;
 		};
 

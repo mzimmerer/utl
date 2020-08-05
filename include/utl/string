@@ -20,12 +20,8 @@
 #include <utl/array>
 #include <utl/cstddef>
 
-#ifdef EMBEDDED_BUILD
-#include <avr/pgmspace.h>
-#else
-#include <cstring>
-const char* PSTR(const char* c_string);
-#endif
+//#include "Platform/Platform.h" // TODO XXX FIXME fix inclusions
+//#include <avr/pgmspace.h> // TODO XXX FIXME
 
 namespace utl {
 
@@ -34,6 +30,7 @@ namespace utl {
 
 	size_t strlen(const char* src);
 
+#if 0
 	template <const size_t SIZE>
 #ifdef EMBEDDED_BUILD
 	utl::string<SIZE> const_string(const char* PROGMEM c_str)
@@ -52,6 +49,7 @@ namespace utl {
 		result[strlen(c_str)] = '\0';
 		return result;
 	}
+#endif
 #endif
 
 	template <const size_t SIZE>
@@ -240,13 +238,21 @@ namespace utl {
 		size_t _size;
 	};
 
+	static utl::string<1> singleCharacterString(char c)
+	{
+		utl::string<1> result;
+		result.resize(1);
+		result[0] = c;
+		return result;
+	}
+
 	template <const size_t SIZE>
 	static string<SIZE> to_string(int value)
 	{
 		string<SIZE> result;
 
 		if (value == 0)
-			return utl::const_string<1>(PSTR("0"));
+			return singleCharacterString('0');
 
 		while (value > 0)
 		{
@@ -254,34 +260,34 @@ namespace utl {
 			switch (mod) {
 			default:
 			case 0:
-				result += utl::const_string<1>(PSTR("0"));
+				result += singleCharacterString('0');
 				break;
 			case 1:
-				result += utl::const_string<1>(PSTR("1"));
+				result += singleCharacterString('1');
 				break;
 			case 2:
-				result += utl::const_string<1>(PSTR("2"));
+				result += singleCharacterString('2');
 				break;
 			case 3:
-				result += utl::const_string<1>(PSTR("3"));
+				result += singleCharacterString('3');
 				break;
 			case 4:
-				result += utl::const_string<1>(PSTR("4"));
+				result += singleCharacterString('4');
 				break;
 			case 5:
-				result += utl::const_string<1>(PSTR("5"));
+				result += singleCharacterString('5');
 				break;
 			case 6:
-				result += utl::const_string<1>(PSTR("6"));
+				result += singleCharacterString('6');
 				break;
 			case 7:
-				result += utl::const_string<1>(PSTR("7"));
+				result += singleCharacterString('7');
 				break;
 			case 8:
-				result += utl::const_string<1>(PSTR("8"));
+				result += singleCharacterString('8');
 				break;
 			case 9:
-				result += utl::const_string<1>(PSTR("9"));
+				result += singleCharacterString('9');
 				break;
 			}
 			value /= 10;
