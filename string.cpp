@@ -30,10 +30,3 @@ size_t utl::strlen(const char* src)
 
 	return result;
 }
-
-#ifndef EMBEDDED_BUILD
-const char* PSTR(const char* c_string)
-{
-	return c_string;
-}
-#endif
